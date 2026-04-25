@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Neighborhood {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  evaluations Evaluation[]
+  alerts      Alert[]
+  createdAt   DateTime     @default(now())
+
+  @@map("neighborhoods")
+}
+
+model Evaluation {
+  id             String       @id @default(cuid())
+  neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id])
+  neighborhoodId String
+  odor           Int
+  color          Int
+  taste          Int
+  tags           String[]
+  comment        String?
+  ipHash         String
+  createdAt      DateTime     @default(now())
+
+  @@index([neighborhoodId])
+  @@index([createdAt])
+  @@map("evaluations")
+}
+
+model Alert {
+  id             String       @id @default(cuid())
+  neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id])
+  neighborhoodId String
+  message        String
+  triggeredAt    DateTime     @default(now())
+  active         Boolean      @default(true)
+
+  @@index([neighborhoodId])
+  @@map("alerts")
+}
