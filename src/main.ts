@@ -6,24 +6,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-    : [];
-
-  app.enableCors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true);
-      if (/^http:\/\/localhost:\d+$/.test(origin)) return cb(null, true);
-      if (allowedOrigins.some((o) => origin === o || origin.endsWith(o))) return cb(null, true);
-      cb(new Error('Not allowed by CORS'));
-    },
-  });
+  app.enableCors();
 
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
 
-  // Health check para Railway
   const httpAdapter = app.getHttpAdapter();
   httpAdapter.get('/health', (_req: any, res: any) => res.status(200).json({ status: 'ok' }));
 
