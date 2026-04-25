@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsOptional, IsArray, Min, Max, MaxLength } from 'class-validator';
+import { IsInt, IsString, IsOptional, IsArray, Min, Max, MaxLength, IsNotEmpty } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 const VALID_TAGS = ['Cheiro de esgoto', 'Água turva', 'Gosto estranho', 'Cor escura', 'Sem problemas'];
@@ -37,4 +37,9 @@ export class CreateEvaluationDto {
   @IsOptional()
   @MaxLength(500)
   comment?: string;
+
+  @ApiProperty({ description: 'Token reCAPTCHA v3' })
+  @IsString()
+  @IsNotEmpty()
+  recaptchaToken: string;
 }
