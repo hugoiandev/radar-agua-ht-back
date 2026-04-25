@@ -23,6 +23,10 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
 
+  // Health check para Railway
+  const httpAdapter = app.getHttpAdapter();
+  httpAdapter.get('/health', (_req: any, res: any) => res.status(200).json({ status: 'ok' }));
+
   const config = new DocumentBuilder()
     .setTitle('Radar Água Hortolândia')
     .setDescription('API para monitoramento da qualidade da água em Hortolândia/SP')
