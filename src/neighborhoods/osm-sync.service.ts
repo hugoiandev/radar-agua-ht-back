@@ -31,14 +31,16 @@ export class OsmSyncService implements OnApplicationBootstrap {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async onApplicationBootstrap() {
-    const count = await this.prisma.neighborhood.count();
-    if (count === 0) {
-      this.logger.log('Nenhum bairro encontrado — sincronizando com OpenStreetMap...');
-      await this.sync();
-    } else {
-      this.logger.log(`${count} bairros já cadastrados. Use POST /neighborhoods/sync para atualizar.`);
-    }
+  onApplicationBootstrap() {
+    // Fire-and-forget: não bloqueia o boot do app
+    this.prisma.neighborhood.count().then((count) => {
+      if (count === 0) {
+        this.logger.log('Nenhum bairro encontrado — sincronizando com OpenStreetMap...');
+        this.sync().catch((e) => this.logger.error('Erro no sync OSM:', e.message));
+      } else {
+        this.logger.log(`${count} bairros cadastrados. Use POST /neighborhoods/sync para atualizar.`);
+      }
+    });
   }
 
   async sync(): Promise<{ inserted: number; skipped: number; names: string[] }> {
@@ -55,11 +57,7 @@ export class OsmSyncService implements OnApplicationBootstrap {
 
     const elements: any[] = response.data.elements ?? [];
     const names = [
-      ...new Set(
-        elements
-          .map((e: any) => e.tags?.name as string)
-          .filter(Boolean)
-      ),
+      ...new Set(elements.map((e: any) => e.tags?.name as string).filter(Boolean)),
     ].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
     this.logger.log(`Encontrados ${names.length} bairros no OSM`);
