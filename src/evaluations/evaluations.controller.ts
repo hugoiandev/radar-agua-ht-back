@@ -12,7 +12,7 @@ export class EvaluationsController {
   constructor(private readonly service: EvaluationsService) {}
 
   @Post()
-  @Throttle({ default: { limit: 1, ttl: 600000 } })
+  @Throttle({ global: { limit: 60, ttl: 60000 }, evaluation: { limit: 1, ttl: 600000 } })
   @ApiOperation({ summary: 'Envia avaliação da qualidade da água (anônimo, 1 por 10min por IP)' })
   async create(@Body() dto: CreateEvaluationDto, @Req() req: Request) {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
