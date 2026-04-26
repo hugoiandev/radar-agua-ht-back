@@ -1,6 +1,9 @@
-import { Controller, Post, Get, Body, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, BadRequestException, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { CacheInterceptor, CacheTTL, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject } from '@nestjs/common';
+import type { Cache } from 'cache-manager';
 import axios from 'axios';
 import { EvaluationsService } from './evaluations.service';
 import { CreateEvaluationDto } from './create-evaluation.dto';
@@ -9,7 +12,10 @@ import type { Request } from 'express';
 @ApiTags('evaluations')
 @Controller('evaluations')
 export class EvaluationsController {
-  constructor(private readonly service: EvaluationsService) {}
+  constructor(
+    private readonly service: EvaluationsService,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
+  ) {}
 
   @Post()
   @Throttle({ default: { limit: 1, ttl: 600000 } })
@@ -25,10 +31,14 @@ export class EvaluationsController {
       }
     }
     const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip ?? '0.0.0.0';
-    return this.service.create(dto, ip);
+    const result = await this.service.create(dto, ip);
+    await (this.cache as any).clear();
+    return result;
   }
 
   @Get('city-index')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60000) // 60 segundos
   @ApiOperation({ summary: 'Retorna índice geral de qualidade da cidade' })
   getCityIndex() {
     return this.service.getCityIndex();
